@@ -26,11 +26,33 @@ limitations under the License.
     tools:context=".SensorApiActivity">
 
     <TextView
-        android:id="@+id/textView"
-        style="@style/Base.TextAppearance.AppCompat.Large"
+        android:id="@+id/stepsTxt"
+        style="@style/Base.TextAppearance.AppCompat.Title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
+        android:alpha="0"
+        android:gravity="center"
+        android:textSize="30sp"
         tools:text="20133"/>
+
+    <TextView
+        android:id="@+id/descTxt"
+        style="@style/Base.TextAppearance.AppCompat.Caption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/stepsTxt"
+        android:textSize="16sp"
+        android:layout_centerHorizontal="true"
+        android:alpha="0"
+        android:gravity="center"
+        android:text="steps this month"
+        tools:text="20133"/>
+
+    <com.vzl.activate.view.ProgressView
+        android:id="@+id/progressView"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_centerInParent="true"/>
 </RelativeLayout>
 

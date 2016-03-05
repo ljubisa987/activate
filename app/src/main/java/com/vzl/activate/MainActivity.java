@@ -10,10 +10,15 @@ import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.result.DataReadResult;
 
+import com.vzl.activate.view.ProgressView;
+
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
 
 import java.text.DateFormat;
@@ -28,14 +33,27 @@ public class MainActivity extends GoogleApiBaseActivity {
 
     private final static DateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
     private static final String KEY_STEPS = "steps";
-    private TextView mTextView;
+    private TextView mStepsTxt;
+    private TextView mDescTxt;
+
+    private ProgressView mProgressView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mTextView = (TextView) findViewById(R.id.textView);
+        mStepsTxt = (TextView) findViewById(R.id.stepsTxt);
+        mDescTxt = (TextView) findViewById(R.id.descTxt);
+        mProgressView = (ProgressView) findViewById(R.id.progressView);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!mIsConnected) {
+            mProgressView.startLoadingAnimation();
+        }
     }
 
     @Override
@@ -44,9 +62,14 @@ public class MainActivity extends GoogleApiBaseActivity {
             @Override
             public void run() {
                 Log.i(TAG, "onClientConnected start getting data...");
-
-                DataReadResult result = Fitness.HistoryApi.readData(mClient, generateDataReadRequest()).await
-                        (1, TimeUnit.MINUTES);
+                Calendar cal = Calendar.getInstance();
+                Date now = new Date();
+                cal.setTime(now);
+                long endTime = cal.getTimeInMillis();
+                Calendar startCalendar = CalendarUtil.getFirstOfTheMonth(cal.getTimeInMillis());
+                long startTime = startCalendar.getTimeInMillis();
+                DataReadResult result = Fitness.HistoryApi
+                        .readData(mClient, generateDataReadRequest(startTime, endTime)).await(1, TimeUnit.MINUTES);
                 Log.i(TAG, "onClientConnected data fetched...");
                 if (!result.getBuckets().isEmpty()) {
                     retrieveSteps(result);
@@ -61,6 +84,7 @@ public class MainActivity extends GoogleApiBaseActivity {
     private void retrieveSteps(DataReadResult dataReadResult) {
         Log.i(TAG, "trying to retrieve steps, data set bucket size: " + dataReadResult.getBuckets().size());
 
+        int countOfStep = 0;
         final List<Integer> mSteps = new LinkedList<>();
         for (Bucket bucket : dataReadResult.getBuckets()) {
             List<DataSet> dataSets = bucket.getDataSets();
@@ -68,28 +92,23 @@ public class MainActivity extends GoogleApiBaseActivity {
                 for (DataPoint dp : dataSet.getDataPoints()) {
                     String date = sDateFormat.format(dp.getTimestamp(TimeUnit.MILLISECONDS));
                     mSteps.add(dp.getValue(Field.FIELD_STEPS).asInt());
+                    countOfStep += dp.getValue(Field.FIELD_STEPS).asInt();
                     Log.i(TAG, KEY_STEPS + " : " + dp.getValue(Field.FIELD_STEPS).asInt() + " on " + date);
                 }
             }
         }
 
+        final int finalCountOfStep = countOfStep;
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mTextView.setText("Count of data set:" + mSteps.size());
+                animateProgress(finalCountOfStep);
             }
         });
 
     }
 
-    DataReadRequest generateDataReadRequest() {
-        Calendar cal = Calendar.getInstance();
-        Date now = new Date();
-        cal.setTime(now);
-        long endTime = cal.getTimeInMillis();
-        cal.add(Calendar.WEEK_OF_YEAR, -10);
-        long startTime = cal.getTimeInMillis();
-
+    DataReadRequest generateDataReadRequest(long startTime, long endTime) {
         Log.i(TAG, "Range Start: " + sDateFormat.format(startTime));
         Log.i(TAG, "Range End: " + sDateFormat.format(endTime));
 
@@ -104,6 +123,34 @@ public class MainActivity extends GoogleApiBaseActivity {
                 .bucketByTime(1, TimeUnit.DAYS)
                 .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
                 .build();
+    }
+
+    private void animateProgress(int finalCountOfStep) {
+        int progress = (int) (finalCountOfStep / 100000f * 100);
+        if (progress > 100) {
+            progress = 100;
+        }
+        mStepsTxt.setText(String.valueOf(finalCountOfStep));
+
+        ObjectAnimator animatorProgress = ObjectAnimator.ofInt(mProgressView, "progress", progress);
+        animatorProgress.setDuration(1000);
+        animatorProgress.setStartDelay(500);
+        animatorProgress.setInterpolator(new AccelerateDecelerateInterpolator());
+
+        ObjectAnimator animatorStepsAlpha = ObjectAnimator.ofFloat(mStepsTxt, "alpha", 0, 1);
+        animatorStepsAlpha.setDuration(1000);
+        animatorStepsAlpha.setStartDelay(500);
+        animatorStepsAlpha.setInterpolator(new AccelerateDecelerateInterpolator());
+
+        ObjectAnimator animatorDescAlpha = ObjectAnimator.ofFloat(mDescTxt, "alpha", 0, 1);
+        animatorDescAlpha.setDuration(1000);
+        animatorDescAlpha.setStartDelay(500);
+        animatorDescAlpha.setInterpolator(new AccelerateDecelerateInterpolator());
+
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.play(animatorProgress).with(animatorStepsAlpha).with(animatorDescAlpha);
+        animatorSet.start();
+        mProgressView.cancelLoadingAnimation();
     }
 
     @Override
