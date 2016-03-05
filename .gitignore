@@ -36,3 +36,4 @@ captures/
 *.iml
 
 .idea/
+*.DS_Store
