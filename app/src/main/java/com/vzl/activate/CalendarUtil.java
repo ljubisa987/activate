@@ -9,6 +9,7 @@ public class CalendarUtil {
         calendar.setTimeInMillis(time);
         calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH));
         calendar.set(Calendar.HOUR, 0);
+        calendar.set(Calendar.AM_PM, Calendar.AM);
         calendar.set(Calendar.MINUTE, 0);
         return calendar;
     }

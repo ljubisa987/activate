@@ -65,6 +65,7 @@ public class MainActivity extends GoogleApiBaseActivity {
                 Calendar cal = Calendar.getInstance();
                 Date now = new Date();
                 cal.setTime(now);
+//                cal.set(2016, 0, 31);
                 long endTime = cal.getTimeInMillis();
                 Calendar startCalendar = CalendarUtil.getFirstOfTheMonth(cal.getTimeInMillis());
                 long startTime = startCalendar.getTimeInMillis();
@@ -126,25 +127,27 @@ public class MainActivity extends GoogleApiBaseActivity {
     }
 
     private void animateProgress(int finalCountOfStep) {
-        int progress = (int) (finalCountOfStep / 100000f * 100);
+        int progress = (int) (finalCountOfStep / 150000f * 100);
         if (progress > 100) {
             progress = 100;
         }
-        mStepsTxt.setText(String.valueOf(finalCountOfStep));
+        mStepsTxt.setText(progress + " points");
+        mDescTxt.setText("or " + finalCountOfStep + " steps\nthis month");
 
         ObjectAnimator animatorProgress = ObjectAnimator.ofInt(mProgressView, "progress", progress);
-        animatorProgress.setDuration(1000);
-        animatorProgress.setStartDelay(500);
+        if (progress > 50) {
+            animatorProgress.setDuration(1000);
+        } else {
+            animatorProgress.setDuration(500);
+        }
         animatorProgress.setInterpolator(new AccelerateDecelerateInterpolator());
 
         ObjectAnimator animatorStepsAlpha = ObjectAnimator.ofFloat(mStepsTxt, "alpha", 0, 1);
         animatorStepsAlpha.setDuration(1000);
-        animatorStepsAlpha.setStartDelay(500);
         animatorStepsAlpha.setInterpolator(new AccelerateDecelerateInterpolator());
 
         ObjectAnimator animatorDescAlpha = ObjectAnimator.ofFloat(mDescTxt, "alpha", 0, 1);
         animatorDescAlpha.setDuration(1000);
-        animatorDescAlpha.setStartDelay(500);
         animatorDescAlpha.setInterpolator(new AccelerateDecelerateInterpolator());
 
         AnimatorSet animatorSet = new AnimatorSet();
